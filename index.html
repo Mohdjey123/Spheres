@@ -39,7 +39,7 @@
 <body>
     <a-scene>
         <!-- Isometric Camera with WASD Controls -->
-        <a-camera id="camera" position="5 5 5" rotation="-30 45 0" wasd-controls="enabled: true"></a-camera>
+        <a-camera id="camera" position="0 5 5" rotation="-30 45 0" wasd-controls="enabled: true"></a-camera>
         
         <!-- Light -->
         <a-light type="ambient" color="#888"></a-light>
@@ -49,40 +49,45 @@
         <a-entity id="chunks-container"></a-entity>
 
         <script>
-            let CHUNK_SIZE = 20; // Size of each chunk
-            let RENDER_DISTANCE = 20; // Maximum distance to render chunks
+            const CHUNK_SIZE = 20; // Size of each chunk
+            const RENDER_DISTANCE = 100; // Maximum distance to render chunks
             const SPACING = 2; // Distance between spheres
 
-            let sphereCount = 0;
-            let loadedChunks = new Map(); // Store loaded chunks by their position
+            const chunks = {}; // Track chunks by their position
+
+            function createSphere(x, y, z) {
+                const sphere = document.createElement('a-sphere');
+                sphere.setAttribute('position', `${x} ${y} ${z}`);
+                sphere.setAttribute('radius', '0.2');
+                sphere.setAttribute('color', '#B0BEC5');
+                sphere.setAttribute('segments-height', '4'); // Minimal height segments
+                sphere.setAttribute('segments-width', '4');  // Minimal width segments
+                sphere.setAttribute('class', 'clickable');
+                sphere.addEventListener('mouseenter', () => {
+                    sphere.setAttribute('scale', '1.5 1.5 1.5');
+                });
+                sphere.addEventListener('mouseleave', () => {
+                    sphere.setAttribute('scale', '1 1 1');
+                });
+                return sphere;
+            }
 
             function createChunk(x, z) {
                 const container = document.createElement('a-entity');
                 container.setAttribute('position', `${x} 0 ${z}`);
                 container.setAttribute('id', `chunk-${x}-${z}`);
 
-                const radius = 0.2;
                 const numSpheres = Math.ceil(CHUNK_SIZE / SPACING); // Number of spheres per dimension
 
                 for (let i = 0; i < numSpheres; i++) {
                     for (let j = 0; j < numSpheres; j++) {
-                        const xOffset = i * SPACING;
-                        const zOffset = j * SPACING;
-                        const sphere = document.createElement('a-sphere');
-                        sphere.setAttribute('position', `${xOffset} 0 ${zOffset}`);
-                        sphere.setAttribute('radius', radius);
-                        sphere.setAttribute('color', '#B0BEC5');
-                        sphere.setAttribute('segments-height', '4'); // Minimal height segments
-                        sphere.setAttribute('segments-width', '4');  // Minimal width segments
-                        sphere.setAttribute('class', 'clickable');
-                        sphere.addEventListener('mouseenter', () => {
-                            sphere.setAttribute('scale', '1.5 1.5 1.5');
-                        });
-                        sphere.addEventListener('mouseleave', () => {
-                            sphere.setAttribute('scale', '1 1 1');
-                        });
-                        container.appendChild(sphere);
-                        sphereCount++;
+                        const xOffset = i * SPACING - (CHUNK_SIZE / 2);
+                        const zOffset = j * SPACING - (CHUNK_SIZE / 2);
+                        const distance = Math.sqrt(xOffset * xOffset + zOffset * zOffset);
+                        if (distance <= CHUNK_SIZE / 2) {
+                            const sphere = createSphere(xOffset, 0, zOffset);
+                            container.appendChild(sphere);
+                        }
                     }
                 }
                 return container;
@@ -91,54 +96,40 @@
             function updateChunks() {
                 const camera = document.querySelector('#camera');
                 const cameraPos = camera.getAttribute('position');
+                const radius = RENDER_DISTANCE;
 
-                // Calculate the visible chunks based on camera position
-                const numChunks = Math.ceil(RENDER_DISTANCE / CHUNK_SIZE);
-                const chunksToLoad = new Set();
-                const chunksToUnload = new Set(loadedChunks.keys());
+                // Calculate visible chunks
+                const visibleChunks = {};
+                const chunkRadius = Math.ceil(RENDER_DISTANCE / CHUNK_SIZE);
 
-                for (let x = -numChunks; x <= numChunks; x++) {
-                    for (let z = -numChunks; z <= numChunks; z++) {
-                        const chunkX = Math.floor(cameraPos.x / CHUNK_SIZE) * CHUNK_SIZE + x * CHUNK_SIZE;
-                        const chunkZ = Math.floor(cameraPos.z / CHUNK_SIZE) * CHUNK_SIZE + z * CHUNK_SIZE;
-
-                        const chunkId = `${chunkX}-${chunkZ}`;
-                        chunksToLoad.add(chunkId);
-                        chunksToUnload.delete(chunkId);
-
-                        if (!loadedChunks.has(chunkId)) {
-                            const chunk = createChunk(chunkX, chunkZ);
-                            document.querySelector('#chunks-container').appendChild(chunk);
-                            loadedChunks.set(chunkId, chunk);
+                for (let x = -chunkRadius; x <= chunkRadius; x++) {
+                    for (let z = -chunkRadius; z <= chunkRadius; z++) {
+                        const chunkX = Math.floor(cameraPos.x / CHUNK_SIZE) * CHUNK_SIZE + (x * CHUNK_SIZE);
+                        const chunkZ = Math.floor(cameraPos.z / CHUNK_SIZE) * CHUNK_SIZE + (z * CHUNK_SIZE);
+                        const distance = Math.sqrt(
+                            Math.pow(cameraPos.x - chunkX, 2) +
+                            Math.pow(cameraPos.z - chunkZ, 2)
+                        );
+                        if (distance <= radius) {
+                            visibleChunks[`${chunkX},${chunkZ}`] = true;
+                            if (!chunks[`${chunkX},${chunkZ}`]) {
+                                const chunk = createChunk(chunkX, chunkZ);
+                                document.querySelector('#chunks-container').appendChild(chunk);
+                                chunks[`${chunkX},${chunkZ}`] = chunk;
+                            }
                         }
                     }
                 }
 
-                // Unload chunks that are no longer needed
-                chunksToUnload.forEach(chunkId => {
-                    const chunk = loadedChunks.get(chunkId);
-                    if (chunk) {
-                        document.querySelector('#chunks-container').removeChild(chunk);
-                        loadedChunks.delete(chunkId);
+                // Remove chunks that are no longer visible
+                Object.keys(chunks).forEach(key => {
+                    if (!visibleChunks[key]) {
+                        const chunk = chunks[key];
+                        chunk.parentNode.removeChild(chunk);
+                        delete chunks[key];
                     }
                 });
-
-                // Update sphere count display
-                document.getElementById('sphere-count').innerText = `Spheres: ${sphereCount}`;
             }
-
-            function updateSettings() {
-                CHUNK_SIZE = parseFloat(document.getElementById('chunk-size').value) || 20;
-                RENDER_DISTANCE = parseFloat(document.getElementById('render-distance').value) || 20;
-                updateChunks();
-            }
-
-            document.addEventListener('DOMContentLoaded', () => {
-                updateChunks();
-
-                document.getElementById('chunk-size').addEventListener('change', updateSettings);
-                document.getElementById('render-distance').addEventListener('change', updateSettings);
-            });
 
             AFRAME.registerComponent('camera-move-listener', {
                 tick: function () {
@@ -153,13 +144,12 @@
     <div id="controls">
         <div>
             <label for="chunk-size">Chunk Size:</label>
-            <input type="number" id="chunk-size" value="20" step="1" min="1">
+            <input type="number" id="chunk-size" value="20" step="1" min="1" disabled>
         </div>
         <div>
             <label for="render-distance">Render Distance:</label>
-            <input type="number" id="render-distance" value="20" step="1" min="1">
+            <input type="number" id="render-distance" value="100" step="1" min="1" disabled>
         </div>
-        <div id="sphere-count">Spheres: 0</div>
     </div>
 </body>    
 </html>
