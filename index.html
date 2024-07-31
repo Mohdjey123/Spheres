@@ -20,21 +20,21 @@
 <body>
     <a-scene>
         <!-- Camera with WASD Controls -->
-        <a-camera id="camera" position="5 5 5" rotation="-30 45 0" wasd-controls="enabled: true" look-controls="pointerLockEnabled: true"></a-camera>
+        <a-camera id="camera" position="0 1.6 5" rotation="-30 45 0" wasd-controls="enabled: true" look-controls="pointerLockEnabled: true"></a-camera>
         
         <!-- Light -->
         <a-light type="ambient" color="#888"></a-light>
         <a-light type="directional" position="2 4 -3"></a-light>
         
-        <!-- Optimize by creating a small number of spheres -->
+        <!-- Container for dynamic spheres -->
         <a-entity id="spheres-container"></a-entity>
 
         <script>
             function createSpheres() {
                 const radius = 0.5;
                 const spacing = 3;
-                const numSpheres = 50;
-                const maxDistance = 20; // Adjusted for optimization
+                const numSpheres = 100;
+                const range = 50; // Larger range for more coverage
 
                 const container = document.querySelector('#spheres-container');
                 const camera = document.querySelector('#camera');
@@ -45,13 +45,13 @@
                 for (let i = -numSpheres / 2; i < numSpheres / 2; i++) {
                     for (let j = -numSpheres / 2; j < numSpheres / 2; j++) {
                         const x = i * spacing;
-                        const y = 0; // Fixed height
                         const z = j * spacing;
-                        const distance = Math.sqrt(x * x + y * y + z * z);
 
-                        if (distance < maxDistance) {
+                        // Only create spheres within a certain range
+                        const distance = Math.sqrt(x * x + z * z);
+                        if (distance < range) {
                             const sphere = document.createElement('a-sphere');
-                            sphere.setAttribute('position', `${x} ${y} ${z}`);
+                            sphere.setAttribute('position', `${x} 0 ${z}`);
                             sphere.setAttribute('radius', radius);
                             sphere.setAttribute('color', '#B0BEC5');
                             sphere.setAttribute('class', 'clickable');
@@ -68,39 +68,39 @@
                 }
             }
 
-            function updateVisibleSpheres() {
+            function updateSpheresPosition() {
                 const camera = document.querySelector('#camera');
                 const cameraPos = camera.getAttribute('position');
                 const spheres = document.querySelectorAll('#spheres-container a-sphere');
 
+                // Update sphere positions based on the camera's position
                 spheres.forEach(sphere => {
-                    const position = sphere.getAttribute('position');
-                    const distance = Math.sqrt(
-                        Math.pow(cameraPos.x - position.x, 2) +
-                        Math.pow(cameraPos.y - position.y, 2) +
-                        Math.pow(cameraPos.z - position.z, 2)
-                    );
-                    if (distance < 20) { // Adjust visibility range
-                        sphere.setAttribute('visible', true);
-                    } else {
-                        sphere.setAttribute('visible', false);
+                    const pos = sphere.getAttribute('position');
+                    sphere.setAttribute('position', `${pos.x - cameraPos.x} ${pos.y} ${pos.z - cameraPos.z}`);
+                });
+            }
+
+            function setupCameraListener() {
+                const camera = document.querySelector('#camera');
+                let lastCameraPos = camera.getAttribute('position');
+
+                AFRAME.registerComponent('camera-move-listener', {
+                    tick: function () {
+                        const currentCameraPos = camera.getAttribute('position');
+                        if (currentCameraPos.x !== lastCameraPos.x || currentCameraPos.y !== lastCameraPos.y || currentCameraPos.z !== lastCameraPos.z) {
+                            lastCameraPos = currentCameraPos;
+                            updateSpheresPosition();
+                        }
                     }
                 });
+
+                camera.setAttribute('camera-move-listener', '');
             }
 
             document.addEventListener('DOMContentLoaded', () => {
                 createSpheres();
-                updateVisibleSpheres();
+                setupCameraListener();
             });
-
-            // Update visibility when the camera position changes
-            AFRAME.registerComponent('camera-move-listener', {
-                tick: function () {
-                    updateVisibleSpheres();
-                }
-            });
-
-            document.querySelector('#camera').setAttribute('camera-move-listener', '');
         </script>
     </a-scene>
 </body>
