@@ -19,8 +19,8 @@
 </head>
 <body>
     <a-scene>
-        <!-- Isometric Camera -->
-        <a-camera id="camera" position="5 5 5" rotation="-30 45 0" wasd-controls="enabled: false"></a-camera>
+        <!-- Camera with WASD Controls -->
+        <a-camera id="camera" position="5 5 5" rotation="-30 45 0" wasd-controls="enabled: true" look-controls="pointerLockEnabled: true"></a-camera>
         
         <!-- Light -->
         <a-light type="ambient" color="#888"></a-light>
@@ -33,7 +33,7 @@
             function createSpheres() {
                 const radius = 0.5;
                 const spacing = 3;
-                const numSpheres = 5000;
+                const numSpheres = 50;
                 const maxDistance = 20; // Adjusted for optimization
 
                 const container = document.querySelector('#spheres-container');
