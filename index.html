@@ -19,31 +19,29 @@
 </head>
 <body>
     <a-scene>
-        <!-- Isometric Camera -->
-        <a-camera id="camera" position="5 5 5" rotation="-30 45 0"></a-camera>
+        <!-- Isometric Camera with WASD Controls -->
+        <a-camera id="camera" position="5 5 5" rotation="-30 45 0" wasd-controls="enabled: true"></a-camera>
         
         <!-- Light -->
         <a-light type="ambient" color="#888"></a-light>
         <a-light type="directional" position="2 4 -3"></a-light>
         
-        <!-- Instanced Sphere -->
+        <!-- Container for dynamic spheres -->
         <a-entity id="spheres-container"></a-entity>
 
         <script>
-            // Function to create and add spheres using instancing
+            // Function to create and add spheres with minimal polygon count
             function createSpheres() {
                 const radius = 0.2;
                 const spacing = 1.2;
-                const numSpheres = 100;
-                const maxDistance = 20; // Adjusted for optimization
+                const numSpheres = 1000;
+                const maxDistance = 100; // Adjusted for optimization
 
                 const container = document.querySelector('#spheres-container');
-                const camera = document.querySelector('#camera');
 
                 // Remove existing spheres
                 container.innerHTML = '';
 
-                // Create spheres using instancing
                 for (let i = -numSpheres / 2; i < numSpheres / 2; i++) {
                     for (let j = -numSpheres / 2; j < numSpheres / 2; j++) {
                         const x = i * spacing;
@@ -56,6 +54,8 @@
                             sphere.setAttribute('position', `${x} ${y} ${z}`);
                             sphere.setAttribute('radius', radius);
                             sphere.setAttribute('color', '#B0BEC5');
+                            sphere.setAttribute('segments-height', '4'); // Minimal height segments
+                            sphere.setAttribute('segments-width', '4');  // Minimal width segments
                             sphere.setAttribute('class', 'clickable');
                             sphere.setAttribute('visible', 'true');
                             sphere.addEventListener('mouseenter', () => {
@@ -70,17 +70,18 @@
                 }
             }
 
+            // Function to update visibility of spheres based on camera position
             function updateVisibleSpheres() {
                 const camera = document.querySelector('#camera');
                 const cameraPos = camera.getAttribute('position');
                 const spheres = document.querySelectorAll('#spheres-container a-sphere');
 
                 spheres.forEach(sphere => {
-                    const position = sphere.getAttribute('position');
+                    const pos = sphere.getAttribute('position');
                     const distance = Math.sqrt(
-                        Math.pow(cameraPos.x - position.x, 2) +
-                        Math.pow(cameraPos.y - position.y, 2) +
-                        Math.pow(cameraPos.z - position.z, 2)
+                        Math.pow(cameraPos.x - pos.x, 2) +
+                        Math.pow(cameraPos.y - pos.y, 2) +
+                        Math.pow(cameraPos.z - pos.z, 2)
                     );
                     if (distance < 20) { // Adjust visibility range
                         sphere.setAttribute('visible', true);
@@ -90,6 +91,7 @@
                 });
             }
 
+            // Initialize and update scene
             document.addEventListener('DOMContentLoaded', () => {
                 createSpheres();
                 updateVisibleSpheres();
