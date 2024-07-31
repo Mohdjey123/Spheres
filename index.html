@@ -32,6 +32,7 @@
         <script>
             const CHUNK_SIZE = 10; // Size of each chunk
             const RENDER_DISTANCE = 20; // Maximum distance to render chunks
+            const SPACING = 1.2; // Distance between spheres
 
             function createChunk(x, z) {
                 const container = document.createElement('a-entity');
@@ -39,13 +40,14 @@
                 container.setAttribute('id', `chunk-${x}-${z}`);
 
                 const radius = 0.2;
-                const spacing = 1.2;
-                const numSpheres = 10; // Reduced number of spheres per chunk
+                const numSpheres = Math.floor(CHUNK_SIZE / SPACING); // Number of spheres per dimension
 
-                for (let i = -numSpheres / 2; i < numSpheres / 2; i++) {
-                    for (let j = -numSpheres / 2; j < numSpheres / 2; j++) {
+                for (let i = 0; i < numSpheres; i++) {
+                    for (let j = 0; j < numSpheres; j++) {
+                        const xOffset = i * SPACING;
+                        const zOffset = j * SPACING;
                         const sphere = document.createElement('a-sphere');
-                        sphere.setAttribute('position', `${i * spacing} 0 ${j * spacing}`);
+                        sphere.setAttribute('position', `${xOffset} 0 ${zOffset}`);
                         sphere.setAttribute('radius', radius);
                         sphere.setAttribute('color', '#B0BEC5');
                         sphere.setAttribute('segments-height', '4'); // Minimal height segments
@@ -86,6 +88,9 @@
             function createChunks() {
                 const numChunks = Math.ceil(RENDER_DISTANCE / CHUNK_SIZE);
                 const container = document.querySelector('#chunks-container');
+
+                // Clear previous chunks
+                container.innerHTML = '';
 
                 for (let x = -numChunks; x <= numChunks; x++) {
                     for (let z = -numChunks; z <= numChunks; z++) {
