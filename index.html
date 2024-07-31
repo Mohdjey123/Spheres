@@ -26,81 +26,83 @@
         <a-light type="ambient" color="#888"></a-light>
         <a-light type="directional" position="2 4 -3"></a-light>
         
-        <!-- Container for dynamic spheres -->
-        <a-entity id="spheres-container"></a-entity>
+        <!-- Chunk Container -->
+        <a-entity id="chunks-container"></a-entity>
 
         <script>
-            // Function to create and add spheres with minimal polygon count
-            function createSpheres() {
+            const CHUNK_SIZE = 10; // Size of each chunk
+            const RENDER_DISTANCE = 20; // Maximum distance to render chunks
+
+            function createChunk(x, z) {
+                const container = document.createElement('a-entity');
+                container.setAttribute('position', `${x} 0 ${z}`);
+                container.setAttribute('id', `chunk-${x}-${z}`);
+
                 const radius = 0.2;
                 const spacing = 1.2;
-                const numSpheres = 1000;
-                const maxDistance = 100; // Adjusted for optimization
-
-                const container = document.querySelector('#spheres-container');
-
-                // Remove existing spheres
-                container.innerHTML = '';
+                const numSpheres = 10; // Reduced number of spheres per chunk
 
                 for (let i = -numSpheres / 2; i < numSpheres / 2; i++) {
                     for (let j = -numSpheres / 2; j < numSpheres / 2; j++) {
-                        const x = i * spacing;
-                        const y = 0; // Fixed height
-                        const z = j * spacing;
-                        const distance = Math.sqrt(x * x + y * y + z * z);
-
-                        if (distance < maxDistance) {
-                            const sphere = document.createElement('a-sphere');
-                            sphere.setAttribute('position', `${x} ${y} ${z}`);
-                            sphere.setAttribute('radius', radius);
-                            sphere.setAttribute('color', '#B0BEC5');
-                            sphere.setAttribute('segments-height', '4'); // Minimal height segments
-                            sphere.setAttribute('segments-width', '4');  // Minimal width segments
-                            sphere.setAttribute('class', 'clickable');
-                            sphere.setAttribute('visible', 'true');
-                            sphere.addEventListener('mouseenter', () => {
-                                sphere.setAttribute('scale', '1.5 1.5 1.5');
-                            });
-                            sphere.addEventListener('mouseleave', () => {
-                                sphere.setAttribute('scale', '1 1 1');
-                            });
-                            container.appendChild(sphere);
-                        }
+                        const sphere = document.createElement('a-sphere');
+                        sphere.setAttribute('position', `${i * spacing} 0 ${j * spacing}`);
+                        sphere.setAttribute('radius', radius);
+                        sphere.setAttribute('color', '#B0BEC5');
+                        sphere.setAttribute('segments-height', '4'); // Minimal height segments
+                        sphere.setAttribute('segments-width', '4');  // Minimal width segments
+                        sphere.setAttribute('class', 'clickable');
+                        sphere.addEventListener('mouseenter', () => {
+                            sphere.setAttribute('scale', '1.5 1.5 1.5');
+                        });
+                        sphere.addEventListener('mouseleave', () => {
+                            sphere.setAttribute('scale', '1 1 1');
+                        });
+                        container.appendChild(sphere);
                     }
                 }
+                return container;
             }
 
-            // Function to update visibility of spheres based on camera position
-            function updateVisibleSpheres() {
+            function updateChunks() {
                 const camera = document.querySelector('#camera');
                 const cameraPos = camera.getAttribute('position');
-                const spheres = document.querySelectorAll('#spheres-container a-sphere');
+                const chunks = document.querySelectorAll('#chunks-container a-entity');
 
-                spheres.forEach(sphere => {
-                    const pos = sphere.getAttribute('position');
+                chunks.forEach(chunk => {
+                    const chunkPos = chunk.getAttribute('position');
                     const distance = Math.sqrt(
-                        Math.pow(cameraPos.x - pos.x, 2) +
-                        Math.pow(cameraPos.y - pos.y, 2) +
-                        Math.pow(cameraPos.z - pos.z, 2)
+                        Math.pow(cameraPos.x - chunkPos.x, 2) +
+                        Math.pow(cameraPos.y - chunkPos.y, 2) +
+                        Math.pow(cameraPos.z - chunkPos.z, 2)
                     );
-                    if (distance < 20) { // Adjust visibility range
-                        sphere.setAttribute('visible', true);
+                    if (distance < RENDER_DISTANCE) {
+                        chunk.setAttribute('visible', true);
                     } else {
-                        sphere.setAttribute('visible', false);
+                        chunk.setAttribute('visible', false);
                     }
                 });
             }
 
-            // Initialize and update scene
+            function createChunks() {
+                const numChunks = Math.ceil(RENDER_DISTANCE / CHUNK_SIZE);
+                const container = document.querySelector('#chunks-container');
+
+                for (let x = -numChunks; x <= numChunks; x++) {
+                    for (let z = -numChunks; z <= numChunks; z++) {
+                        const chunk = createChunk(x * CHUNK_SIZE, z * CHUNK_SIZE);
+                        container.appendChild(chunk);
+                    }
+                }
+            }
+
             document.addEventListener('DOMContentLoaded', () => {
-                createSpheres();
-                updateVisibleSpheres();
+                createChunks();
+                updateChunks();
             });
 
-            // Update visibility when the camera position changes
             AFRAME.registerComponent('camera-move-listener', {
                 tick: function () {
-                    updateVisibleSpheres();
+                    updateChunks();
                 }
             });
 
