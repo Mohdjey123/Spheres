@@ -33,12 +33,21 @@
             padding: 5px;
             font-size: 16px;
         }
-        .chunk {
-            opacity: 0;
-            transition: opacity 1s;
+        #top-view-map {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 200px;
+            height: 200px;
+            border: 2px solid white;
+            background-color: black;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        .chunk.visible {
-            opacity: 1;
+        #top-view-map canvas {
+            width: 100%;
+            height: 100%;
         }
     </style>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
@@ -47,6 +56,9 @@
     <a-scene>
         <!-- Isometric Camera with WASD Controls -->
         <a-camera id="camera" position="0 5 5" rotation="-30 45 0" wasd-controls="enabled: true"></a-camera>
+        
+        <!-- Top-View Camera -->
+        <a-camera id="top-view-camera" position="0 20 0" rotation="-90 0 0" camera="orthographic: true; far: 100; near: 0.1;" visible="false"></a-camera>
         
         <!-- Light -->
         <a-light type="ambient" color="#888"></a-light>
@@ -144,6 +156,35 @@
 
                 // Update sphere count display
                 document.getElementById('sphere-count').innerText = `Spheres: ${document.querySelectorAll('a-sphere').length}`;
+
+                // Update top view map
+                updateTopViewMap();
+            }
+
+            function updateTopViewMap() {
+                const topViewCamera = document.querySelector('#top-view-camera');
+                const mapCanvas = document.getElementById('map-canvas');
+                const mapCtx = mapCanvas.getContext('2d');
+                const width = mapCanvas.width;
+                const height = mapCanvas.height;
+
+                mapCtx.clearRect(0, 0, width, height);
+
+                const scale = width / RENDER_DISTANCE;
+                const cameraPos = topViewCamera.getAttribute('position');
+                const offsetX = cameraPos.x;
+                const offsetZ = cameraPos.z;
+
+                document.querySelectorAll('#chunks-container a-entity').forEach(chunk => {
+                    const position = chunk.getAttribute('position');
+                    const x = position.x - offsetX + (width / 2);
+                    const z = position.z - offsetZ + (height / 2);
+
+                    mapCtx.beginPath();
+                    mapCtx.arc(x * scale, z * scale, 5, 0, 2 * Math.PI);
+                    mapCtx.fillStyle = '#B0BEC5';
+                    mapCtx.fill();
+                });
             }
 
             function updateSettings() {
@@ -179,6 +220,10 @@
             <input type="number" id="render-distance" value="100" step="1" min="1">
         </div>
         <div id="sphere-count">Spheres: 0</div>
+    </div>
+
+    <div id="top-view-map">
+        <canvas id="map-canvas"></canvas>
     </div>
 </body>    
 </html>
