@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Interactive Resume</title>
+    <title>3D Interactive Scene</title>
     <style>
         body { margin: 0; }
         a-scene { width: 100vw; height: 100vh; display: block; }
@@ -12,7 +12,7 @@
             transition: transform 0.2s;
         }
         .clickable:hover {
-            transform: scale(1.5);
+            transform: scale(1.2);
         }
     </style>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
@@ -20,21 +20,20 @@
 <body>
     <a-scene>
         <!-- Isometric Camera -->
-        <a-camera id="camera" position="5 5 5" rotation="-30 45 0"></a-camera>
+        <a-camera id="camera" position="5 5 5" rotation="-30 45 0" wasd-controls="enabled: false"></a-camera>
         
         <!-- Light -->
         <a-light type="ambient" color="#888"></a-light>
         <a-light type="directional" position="2 4 -3"></a-light>
         
-        <!-- Instanced Sphere -->
+        <!-- Optimize by creating a small number of spheres -->
         <a-entity id="spheres-container"></a-entity>
 
         <script>
-            // Function to create and add spheres using instancing
             function createSpheres() {
-                const radius = 0.2;
-                const spacing = 1.2;
-                const numSpheres = 100;
+                const radius = 0.5;
+                const spacing = 3;
+                const numSpheres = 50;
                 const maxDistance = 20; // Adjusted for optimization
 
                 const container = document.querySelector('#spheres-container');
@@ -43,7 +42,6 @@
                 // Remove existing spheres
                 container.innerHTML = '';
 
-                // Create spheres using instancing
                 for (let i = -numSpheres / 2; i < numSpheres / 2; i++) {
                     for (let j = -numSpheres / 2; j < numSpheres / 2; j++) {
                         const x = i * spacing;
@@ -59,7 +57,7 @@
                             sphere.setAttribute('class', 'clickable');
                             sphere.setAttribute('visible', 'true');
                             sphere.addEventListener('mouseenter', () => {
-                                sphere.setAttribute('scale', '1.5 1.5 1.5');
+                                sphere.setAttribute('scale', '1.2 1.2 1.2');
                             });
                             sphere.addEventListener('mouseleave', () => {
                                 sphere.setAttribute('scale', '1 1 1');
@@ -105,5 +103,5 @@
             document.querySelector('#camera').setAttribute('camera-move-listener', '');
         </script>
     </a-scene>
-</body>    
+</body>
 </html>
