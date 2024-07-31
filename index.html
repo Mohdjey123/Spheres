@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Interactive Resume</title>
+    <style>
+        body { margin: 0; }
+        a-scene { width: 100vw; height: 100vh; display: block; }
+        .clickable {
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .clickable:hover {
+            transform: scale(1.5);
+        }
+    </style>
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+</head>
+<body>
+    <a-scene>
+        <!-- Isometric Camera -->
+        <a-camera id="camera" position="5 5 5" rotation="-30 45 0"></a-camera>
+        
+        <!-- Light -->
+        <a-light type="ambient" color="#888"></a-light>
+        <a-light type="directional" position="2 4 -3"></a-light>
+        
+        <!-- Instanced Sphere -->
+        <a-entity id="spheres-container"></a-entity>
+
+        <script>
+            // Function to create and add spheres using instancing
+            function createSpheres() {
+                const radius = 0.2;
+                const spacing = 1.2;
+                const numSpheres = 100;
+                const maxDistance = 20; // Adjusted for optimization
+
+                const container = document.querySelector('#spheres-container');
+                const camera = document.querySelector('#camera');
+
+                // Remove existing spheres
+                container.innerHTML = '';
+
+                // Create spheres using instancing
+                for (let i = -numSpheres / 2; i < numSpheres / 2; i++) {
+                    for (let j = -numSpheres / 2; j < numSpheres / 2; j++) {
+                        const x = i * spacing;
+                        const y = 0; // Fixed height
+                        const z = j * spacing;
+                        const distance = Math.sqrt(x * x + y * y + z * z);
+
+                        if (distance < maxDistance) {
+                            const sphere = document.createElement('a-sphere');
+                            sphere.setAttribute('position', `${x} ${y} ${z}`);
+                            sphere.setAttribute('radius', radius);
+                            sphere.setAttribute('color', '#B0BEC5');
+                            sphere.setAttribute('class', 'clickable');
+                            sphere.setAttribute('visible', 'true');
+                            sphere.addEventListener('mouseenter', () => {
+                                sphere.setAttribute('scale', '1.5 1.5 1.5');
+                            });
+                            sphere.addEventListener('mouseleave', () => {
+                                sphere.setAttribute('scale', '1 1 1');
+                            });
+                            container.appendChild(sphere);
+                        }
+                    }
+                }
+            }
+
+            function updateVisibleSpheres() {
+                const camera = document.querySelector('#camera');
+                const cameraPos = camera.getAttribute('position');
+                const spheres = document.querySelectorAll('#spheres-container a-sphere');
+
+                spheres.forEach(sphere => {
+                    const position = sphere.getAttribute('position');
+                    const distance = Math.sqrt(
+                        Math.pow(cameraPos.x - position.x, 2) +
+                        Math.pow(cameraPos.y - position.y, 2) +
+                        Math.pow(cameraPos.z - position.z, 2)
+                    );
+                    if (distance < 20) { // Adjust visibility range
+                        sphere.setAttribute('visible', true);
+                    } else {
+                        sphere.setAttribute('visible', false);
+                    }
+                });
+            }
+
+            document.addEventListener('DOMContentLoaded', () => {
+                createSpheres();
+                updateVisibleSpheres();
+            });
+
+            // Update visibility when the camera position changes
+            AFRAME.registerComponent('camera-move-listener', {
+                tick: function () {
+                    updateVisibleSpheres();
+                }
+            });
+
+            document.querySelector('#camera').setAttribute('camera-move-listener', '');
+        </script>
+    </a-scene>
+</body>    
+</html>
