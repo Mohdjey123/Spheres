@@ -54,6 +54,7 @@
             const SPACING = 2; // Distance between spheres
 
             let sphereCount = 0;
+            let loadedChunks = new Map(); // Store loaded chunks by their position
 
             function createChunk(x, z) {
                 const container = document.createElement('a-entity');
@@ -90,19 +91,35 @@
             function updateChunks() {
                 const camera = document.querySelector('#camera');
                 const cameraPos = camera.getAttribute('position');
-                const chunks = document.querySelectorAll('#chunks-container a-entity');
 
-                chunks.forEach(chunk => {
-                    const chunkPos = chunk.getAttribute('position');
-                    const distance = Math.sqrt(
-                        Math.pow(cameraPos.x - chunkPos.x, 2) +
-                        Math.pow(cameraPos.y - chunkPos.y, 2) +
-                        Math.pow(cameraPos.z - chunkPos.z, 2)
-                    );
-                    if (distance < RENDER_DISTANCE) {
-                        chunk.setAttribute('visible', true);
-                    } else {
-                        chunk.setAttribute('visible', false);
+                // Calculate the visible chunks based on camera position
+                const numChunks = Math.ceil(RENDER_DISTANCE / CHUNK_SIZE);
+                const chunksToLoad = new Set();
+                const chunksToUnload = new Set(loadedChunks.keys());
+
+                for (let x = -numChunks; x <= numChunks; x++) {
+                    for (let z = -numChunks; z <= numChunks; z++) {
+                        const chunkX = Math.floor(cameraPos.x / CHUNK_SIZE) * CHUNK_SIZE + x * CHUNK_SIZE;
+                        const chunkZ = Math.floor(cameraPos.z / CHUNK_SIZE) * CHUNK_SIZE + z * CHUNK_SIZE;
+
+                        const chunkId = `${chunkX}-${chunkZ}`;
+                        chunksToLoad.add(chunkId);
+                        chunksToUnload.delete(chunkId);
+
+                        if (!loadedChunks.has(chunkId)) {
+                            const chunk = createChunk(chunkX, chunkZ);
+                            document.querySelector('#chunks-container').appendChild(chunk);
+                            loadedChunks.set(chunkId, chunk);
+                        }
+                    }
+                }
+
+                // Unload chunks that are no longer needed
+                chunksToUnload.forEach(chunkId => {
+                    const chunk = loadedChunks.get(chunkId);
+                    if (chunk) {
+                        document.querySelector('#chunks-container').removeChild(chunk);
+                        loadedChunks.delete(chunkId);
                     }
                 });
 
@@ -110,31 +127,13 @@
                 document.getElementById('sphere-count').innerText = `Spheres: ${sphereCount}`;
             }
 
-            function createChunks() {
-                const numChunks = Math.ceil(RENDER_DISTANCE / CHUNK_SIZE);
-                const container = document.querySelector('#chunks-container');
-
-                // Clear previous chunks
-                container.innerHTML = '';
-                sphereCount = 0; // Reset sphere count
-
-                for (let x = -numChunks; x <= numChunks; x++) {
-                    for (let z = -numChunks; z <= numChunks; z++) {
-                        const chunk = createChunk(x * CHUNK_SIZE, z * CHUNK_SIZE);
-                        container.appendChild(chunk);
-                    }
-                }
-            }
-
             function updateSettings() {
                 CHUNK_SIZE = parseFloat(document.getElementById('chunk-size').value) || 20;
                 RENDER_DISTANCE = parseFloat(document.getElementById('render-distance').value) || 20;
-                createChunks();
                 updateChunks();
             }
 
             document.addEventListener('DOMContentLoaded', () => {
-                createChunks();
                 updateChunks();
 
                 document.getElementById('chunk-size').addEventListener('change', updateSettings);
