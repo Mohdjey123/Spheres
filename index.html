@@ -14,6 +14,17 @@
         .clickable:hover {
             transform: scale(1.5);
         }
+        #sphere-count {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            padding: 5px;
+            border-radius: 3px;
+            font-family: Arial, sans-serif;
+            font-size: 16px;
+        }
     </style>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
 </head>
@@ -31,8 +42,10 @@
 
         <script>
             const CHUNK_SIZE = 10; // Size of each chunk
-            const RENDER_DISTANCE = 50; // Maximum distance to render chunks
+            const RENDER_DISTANCE = 20; // Maximum distance to render chunks
             const SPACING = 1.2; // Distance between spheres
+
+            let sphereCount = 0;
 
             function createChunk(x, z) {
                 const container = document.createElement('a-entity');
@@ -60,6 +73,7 @@
                             sphere.setAttribute('scale', '1 1 1');
                         });
                         container.appendChild(sphere);
+                        sphereCount++;
                     }
                 }
                 return container;
@@ -83,6 +97,9 @@
                         chunk.setAttribute('visible', false);
                     }
                 });
+
+                // Update sphere count display
+                document.getElementById('sphere-count').innerText = `Spheres: ${sphereCount}`;
             }
 
             function createChunks() {
@@ -91,6 +108,7 @@
 
                 // Clear previous chunks
                 container.innerHTML = '';
+                sphereCount = 0; // Reset sphere count
 
                 for (let x = -numChunks; x <= numChunks; x++) {
                     for (let z = -numChunks; z <= numChunks; z++) {
@@ -114,5 +132,7 @@
             document.querySelector('#camera').setAttribute('camera-move-listener', '');
         </script>
     </a-scene>
+    
+    <div id="sphere-count">Spheres: 0</div>
 </body>    
 </html>
