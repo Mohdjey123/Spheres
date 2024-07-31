@@ -14,15 +14,23 @@
         .clickable:hover {
             transform: scale(1.5);
         }
-        #sphere-count {
+        #controls {
             position: absolute;
             top: 10px;
             right: 10px;
             background: rgba(0, 0, 0, 0.5);
             color: white;
-            padding: 5px;
-            border-radius: 3px;
+            padding: 10px;
+            border-radius: 5px;
             font-family: Arial, sans-serif;
+            font-size: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        #controls input {
+            width: 100px;
+            padding: 5px;
             font-size: 16px;
         }
     </style>
@@ -41,8 +49,8 @@
         <a-entity id="chunks-container"></a-entity>
 
         <script>
-            const CHUNK_SIZE = 10; // Size of each chunk
-            const RENDER_DISTANCE = 20; // Maximum distance to render chunks
+            let CHUNK_SIZE = 10; // Default size of each chunk
+            let RENDER_DISTANCE = 20; // Default maximum distance to render chunks
             const SPACING = 1.2; // Distance between spheres
 
             let sphereCount = 0;
@@ -118,9 +126,19 @@
                 }
             }
 
+            function updateSettings() {
+                CHUNK_SIZE = parseFloat(document.getElementById('chunk-size').value) || 10;
+                RENDER_DISTANCE = parseFloat(document.getElementById('render-distance').value) || 20;
+                createChunks();
+                updateChunks();
+            }
+
             document.addEventListener('DOMContentLoaded', () => {
                 createChunks();
                 updateChunks();
+
+                document.getElementById('chunk-size').addEventListener('change', updateSettings);
+                document.getElementById('render-distance').addEventListener('change', updateSettings);
             });
 
             AFRAME.registerComponent('camera-move-listener', {
@@ -133,6 +151,16 @@
         </script>
     </a-scene>
     
-    <div id="sphere-count">Spheres: 0</div>
+    <div id="controls">
+        <div>
+            <label for="chunk-size">Chunk Size:</label>
+            <input type="number" id="chunk-size" value="10" step="1" min="1">
+        </div>
+        <div>
+            <label for="render-distance">Render Distance:</label>
+            <input type="number" id="render-distance" value="20" step="1" min="1">
+        </div>
+        <div id="sphere-count">Spheres: 0</div>
+    </div>
 </body>    
 </html>
