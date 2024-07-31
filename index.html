@@ -91,11 +91,8 @@
                     for (let j = 0; j < numSpheres; j++) {
                         const xOffset = i * SPACING - (CHUNK_SIZE / 2);
                         const zOffset = j * SPACING - (CHUNK_SIZE / 2);
-                        const distance = Math.sqrt(xOffset * xOffset + zOffset * zOffset);
-                        if (distance <= CHUNK_SIZE / 2) {
-                            const sphere = createSphere(xOffset, 0, zOffset);
-                            container.appendChild(sphere);
-                        }
+                        const sphere = createSphere(xOffset, 0, zOffset);
+                        container.appendChild(sphere);
                     }
                 }
                 return container;
